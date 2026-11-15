@@ -26,7 +26,7 @@ A quick introduction to the agricultural challenges we aim to solve and how AGRI
 
 ### 🎥 3-Minute Project Demonstration
 
-**[Watch Our 3-Minute Project Demonstration]((https://youtu.be/RgTWrj-QCmM))**
+**[Watch Our 3-Minute Project Demonstration](https://youtu.be/RgTWrj-QCmM)**
 
 Discover the main features of FieldShift FarmOS, including NASA climate data integration, crop rotation comparison, What-If analysis, and smart farm monitoring.
 
