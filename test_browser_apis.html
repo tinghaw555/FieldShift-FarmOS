@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FieldShift FarmOS - API Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c5f2d;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background: #2c5f2d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1e4620;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .coords {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 FieldShift FarmOS - Browser API Compatibility Test</h1>
+    <p>This page tests whether NASA POWER and Open-Meteo APIs can be called directly from the browser (no backend required).</p>
+
+    <!-- Test Configuration -->
+    <div class="test-section">
+        <h2>Test Location</h2>
+        <p>
+            <span class="coords">📍 Latitude: 42.0</span>
+            <span class="coords">📍 Longitude: -93.5</span>
+            <span class="coords">📍 Location: Iowa, USA (Corn Belt)</span>
+        </p>
+    </div>
+
+    <!-- NASA POWER Test -->
+    <div class="test-section">
+        <h2>🛰️ Test 1: NASA POWER Climate Data</h2>
+        <p><strong>API:</strong> https://power.larc.nasa.gov/api/temporal/daily/point</p>
+        <p><strong>Purpose:</strong> Retrieve historical climate data for crop water calculations</p>
+        
+        <button onclick="testNASAPower()">Run NASA POWER Test</button>
+        
+        <div id="nasa-status"></div>
+        <div id="nasa-results"></div>
+    </div>
+
+    <!-- Open-Meteo Test -->
+    <div class="test-section">
+        <h2>☁️ Test 2: Open-Meteo Weather Forecast</h2>
+        <p><strong>API:</strong> https://api.open-meteo.com/v1/forecast</p>
+        <p><strong>Purpose:</strong> Retrieve 7-day weather forecast for irrigation planning</p>
+        
+        <button onclick="testOpenMeteo()">Run Open-Meteo Test</button>
+        
+        <div id="meteo-status"></div>
+        <div id="meteo-results"></div>
+    </div>
+
+    <!-- Summary -->
+    <div class="test-section">
+        <h2>📊 Test Summary</h2>
+        <div id="summary">
+            <p>Click the test buttons above to verify API compatibility.</p>
+        </div>
+    </div>
+
+    <script>
+        // Test NASA POWER API
+        async function testNASAPower() {
+            const statusDiv = document.getElementById('nasa-status');
+            const resultsDiv = document.getElementById('nasa-results');
+            
+            statusDiv.innerHTML = '<div class="status loading">⏳ Testing NASA POWER API...</div>';
+            resultsDiv.innerHTML = '';
+            
+            const url = 'https://power.larc.nasa.gov/api/temporal/daily/point';
+            const params = new URLSearchParams({
+                parameters: 'T2M,T2M_MAX,T2M_MIN,PRECTOTCORR,RH2M',
+                community: 'AG',
+                longitude: -93.5,
+                latitude: 42.0,
+                start: '20230401',
+                end: '20230410',
+                format: 'JSON'
+            });
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${url}?${params}`);
+                const duration = Date.now() - startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Parse data
+                let dataPoints = 0;
+                let sampleData = '';
+                
+                if (data.properties && data.properties.parameter) {
+                    const params = data.properties.parameter;
+                    const firstParam = Object.values(params)[0];
+                    dataPoints = Object.keys(firstParam).length;
+                    
+                    // Get first few data points
+                    const dates = Object.keys(firstParam).slice(0, 3);
+                    sampleData = dates.map(date => {
+                        const temp = params.T2M?.[date];
+                        const precip = params.PRECTOTCORR?.[date];
+                        return `${date}: T=${temp}°C, P=${precip}mm`;
+                    }).join('\n');
+                }
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ <strong>NASA POWER: SUCCESS</strong><br>
+                        Response time: ${duration}ms<br>
+                        Data points received: ${dataPoints} days
+                    </div>
+                `;
+                
+                resultsDiv.innerHTML = `
+                    <h3>Sample Data:</h3>
+                    <pre>${sampleData}</pre>
+                    <h3>Full Response (first 500 chars):</h3>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                `;
+                
+                updateSummary('nasa', true);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ <strong>NASA POWER: FAILED</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                
+                resultsDiv.innerHTML = `
+                    <h3>Error Details:</h3>
+                    <pre>${error.stack || error.message}</pre>
+                    <p><strong>Possible causes:</strong></p>
+                    <ul>
+                        <li>CORS restrictions (browser blocking the request)</li>
+                        <li>Network connectivity issues</li>
+                        <li>NASA POWER API temporarily unavailable</li>
+                    </ul>
+                `;
+                
+                updateSummary('nasa', false);
+            }
+        }
+        
+        // Test Open-Meteo API
+        async function testOpenMeteo() {
+            const statusDiv = document.getElementById('meteo-status');
+            const resultsDiv = document.getElementById('meteo-results');
+            
+            statusDiv.innerHTML = '<div class="status loading">⏳ Testing Open-Meteo API...</div>';
+            resultsDiv.innerHTML = '';
+            
+            const url = 'https://api.open-meteo.com/v1/forecast';
+            const params = new URLSearchParams({
+                latitude: 42.0,
+                longitude: -93.5,
+                daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
+                timezone: 'auto',
+                forecast_days: 7
+            });
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${url}?${params}`);
+                const duration = Date.now() - startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Parse forecast
+                const daily = data.daily || {};
+                const dates = daily.time || [];
+                
+                let sampleForecast = '';
+                if (dates.length > 0) {
+                    sampleForecast = dates.slice(0, 3).map((date, i) => {
+                        const tempMax = daily.temperature_2m_max?.[i];
+                        const tempMin = daily.temperature_2m_min?.[i];
+                        const precip = daily.precipitation_sum?.[i];
+                        const precipProb = daily.precipitation_probability_max?.[i];
+                        return `${date}: ${tempMin}°C - ${tempMax}°C, Rain: ${precip}mm (${precipProb}%)`;
+                    }).join('\n');
+                }
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ <strong>Open-Meteo: SUCCESS</strong><br>
+                        Response time: ${duration}ms<br>
+                        Forecast days: ${dates.length}
+                    </div>
+                `;
+                
+                resultsDiv.innerHTML = `
+                    <h3>Sample Forecast:</h3>
+                    <pre>${sampleForecast}</pre>
+                    <h3>Full Response (first 500 chars):</h3>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                `;
+                
+                updateSummary('meteo', true);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ <strong>Open-Meteo: FAILED</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                
+                resultsDiv.innerHTML = `
+                    <h3>Error Details:</h3>
+                    <pre>${error.stack || error.message}</pre>
+                    <p><strong>Possible causes:</strong></p>
+                    <ul>
+                        <li>CORS restrictions (browser blocking the request)</li>
+                        <li>Network connectivity issues</li>
+                        <li>Open-Meteo API temporarily unavailable</li>
+                    </ul>
+                `;
+                
+                updateSummary('meteo', false);
+            }
+        }
+        
+        // Update summary
+        const testResults = {
+            nasa: null,
+            meteo: null
+        };
+        
+        function updateSummary(test, success) {
+            testResults[test] = success;
+            
+            const summary = document.getElementById('summary');
+            
+            let html = '<h3>Results:</h3><ul>';
+            
+            if (testResults.nasa !== null) {
+                html += `<li>NASA POWER: ${testResults.nasa ? '✅ Compatible' : '❌ Failed'}</li>`;
+            }
+            
+            if (testResults.meteo !== null) {
+                html += `<li>Open-Meteo: ${testResults.meteo ? '✅ Compatible' : '❌ Failed'}</li>`;
+            }
+            
+            html += '</ul>';
+            
+            if (testResults.nasa !== null && testResults.meteo !== null) {
+                if (testResults.nasa && testResults.meteo) {
+                    html += `
+                        <div class="status success">
+                            <strong>🎉 CONCLUSION: GitHub Pages Deployment is VIABLE!</strong><br>
+                            Both APIs can be called directly from the browser without CORS issues.
+                            FieldShift FarmOS core features (climate data, forecasts, crop calculations) 
+                            will work perfectly on GitHub Pages.
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="status error">
+                            <strong>⚠️ CONCLUSION: API Issues Detected</strong><br>
+                            One or more APIs failed. Please check error details above.
+                            This may be temporary or related to network/CORS configuration.
+                        </div>
+                    `;
+                }
+            }
+            
+            summary.innerHTML = html;
+        }
+        
+        // Auto-run tests on load (optional)
+        // window.onload = () => {
+        //     setTimeout(testNASAPower, 500);
+        //     setTimeout(testOpenMeteo, 1500);
+        // };
+    </script>
+</body>
+</html>

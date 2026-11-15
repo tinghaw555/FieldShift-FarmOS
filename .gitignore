@@ -1,0 +1,139 @@
+# FieldShift FarmOS - Git Ignore Configuration
+# NASA Space Apps Challenge 2026
+
+# ============================================================================
+# SECURITY - SENSITIVE FILES
+# ============================================================================
+# Environment files with credentials
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# Exception: Example templates are OK to commit
+!.env.example
+!*.env.example
+
+# SQLite Databases (contain user data)
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================================================
+# BUILD OUTPUTS
+# ============================================================================
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Python
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+
+# ============================================================================
+# IDE & EDITOR
+# ============================================================================
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ============================================================================
+# OPERATING SYSTEM
+# ============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+Desktop.ini
+
+# Linux
+*~
+
+# ============================================================================
+# LOGS
+# ============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ============================================================================
+# TESTING
+# ============================================================================
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# ============================================================================
+# TEMPORARY FILES
+# ============================================================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# ============================================================================
+# PROJECT SPECIFIC
+# ============================================================================
+# Local development documentation (too many internal notes)
+# Uncomment if you want to exclude internal dev docs:
+# *_INTERNAL.md
+# *_NOTES.md
+
+# Hardware compilation artifacts
+hardware/**/*.hex
+hardware/**/*.elf
+hardware/**/*.bin
+
+# Sensitive config files (credentials sanitized versions are committed)
+# The config.h files in the repo have placeholders - actual configs stay local
